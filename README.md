@@ -34,8 +34,8 @@ You need a simple local HTTP server. You can use Python, Node.js, or any VS Code
 ### Method 1: Using Python (Recommended if Python is installed)
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/StegVault.git
-   cd StegVault
+   git clone https://github.com/PraveenChigurla/Steganography.git
+   cd Steganography
    ```
 2. Start the local server:
    ```bash

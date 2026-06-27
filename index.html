@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Universal Steganography Toolkit — Hide encrypted data inside images, videos, audio, and documents. AES-256-GCM encryption, local processing." />
+  <meta name="keywords" content="steganography, encryption, AES-256, LSB, image steganography, video steganography, privacy, security" />
+  <meta name="author" content="Universal Steganography Toolkit" />
+  <meta property="og:title" content="Universal Steganography Toolkit" />
+  <meta property="og:description" content="Hide encrypted data inside images, videos, audio, and documents with AES-256-GCM encryption. 100% local processing." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#0d1117" />
+  <title>Universal Steganography Toolkit</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- JSZip for multi-file ZIP creation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- pako for deflate compression -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+  <link rel="stylesheet" href="css/index.css" />
+</head>
+<body>
+  <!-- ═══════════════════════════════════ HEADER ═══════════════════════════ -->
+  <header class="app-header" role="banner">
+    <div class="header-inner">
+      <div class="logo" aria-label="Universal Steganography Toolkit">
+        <svg class="logo-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="40" height="40" rx="10" fill="url(#logoGrad)"/>
+          <path d="M8 20C8 13.373 13.373 8 20 8s12 5.373 12 12-5.373 12-12 12S8 26.627 8 20z" stroke="#fff" stroke-width="1.5" fill="none" opacity="0.3"/>
+          <path d="M14 20a6 6 0 1 0 12 0 6 6 0 0 0-12 0z" fill="url(#logoGrad2)"/>
+          <path d="M20 17v6M17 20h6" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="logoGrad" x1="0" y1="0" x2="40" y2="40">
+              <stop offset="0%" stop-color="#6366f1"/>
+              <stop offset="100%" stop-color="#06b6d4"/>
+            </linearGradient>
+            <linearGradient id="logoGrad2" x1="14" y1="14" x2="26" y2="26">
+              <stop offset="0%" stop-color="#6366f1" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.8"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="logo-text">
+          <span class="logo-name">StegVault</span>
+          <span class="logo-sub">Universal Steganography Toolkit</span>
+        </div>
+      </div>
+      <div class="header-badges">
+        <button id="about-btn" class="header-btn" aria-label="About StegVault">About</button>
+        <span class="badge badge--secure">🔐 AES-256-GCM</span>
+        <span class="badge badge--local">🖥️ 100% Local</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════ MAIN ════════════════════════════ -->
+  <main class="app-main" role="main">
+
+    <!-- Tab Navigation -->
+    <nav class="tab-nav" role="tablist" aria-label="Application Sections">
+      <button id="tab-encrypt" class="tab-btn tab-btn--active" role="tab" aria-selected="true" aria-controls="panel-encrypt" data-tab="encrypt">
+        <svg class="tab-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+        Encrypt
+      </button>
+      <button id="tab-decrypt" class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-decrypt" data-tab="decrypt">
+        <svg class="tab-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"/></svg>
+        Decrypt
+      </button>
+      <div class="tab-indicator" aria-hidden="true"></div>
+    </nav>
+
+    <!-- ─────────────────────── ENCRYPT PANEL ──────────────────────────── -->
+    <section id="panel-encrypt" class="tab-panel tab-panel--active" role="tabpanel" aria-labelledby="tab-encrypt">
+
+      <!-- Step Indicator -->
+      <div class="step-indicator" aria-label="Encryption Steps">
+        <div class="step step--active" data-step="1">
+          <div class="step-dot"><span>1</span></div>
+          <div class="step-label">Carrier</div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step" data-step="2">
+          <div class="step-dot"><span>2</span></div>
+          <div class="step-label">Password</div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step" data-step="3">
+          <div class="step-dot"><span>3</span></div>
+          <div class="step-label">Payload</div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step" data-step="4">
+          <div class="step-dot"><span>4</span></div>
+          <div class="step-label">Encrypt</div>
+        </div>
+      </div>
+
+      <!-- ── Step 1: Carrier ── -->
+      <div class="card" id="section-carrier">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="step-badge">01</span>
+            <h2 class="card-title">Select Cover Media</h2>
+          </div>
+          <p class="card-subtitle">Choose the media that will carry your hidden data</p>
+        </div>
+
+        <!-- Carrier Type Toggle -->
+        <div class="carrier-type-toggle" role="group" aria-label="Carrier type selection">
+          <button id="carrier-type-image" class="type-btn type-btn--active" data-carrier-type="image" aria-pressed="true">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/></svg>
+            Image
+          </button>
+          <button id="carrier-type-video" class="type-btn" data-carrier-type="video" aria-pressed="false">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm12.553 1.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/></svg>
+            Video
+          </button>
+          <button id="carrier-type-audio" class="type-btn" data-carrier-type="audio" aria-pressed="false">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.536l8-1.6v5.178A4.369 4.369 0 0015 11c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z"/></svg>
+            Audio
+          </button>
+          <button id="carrier-type-document" class="type-btn" data-carrier-type="document" aria-pressed="false">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+            Document
+          </button>
+        </div>
+
+        <!-- Carrier Drop Zone -->
+        <div id="carrier-drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Drop carrier file here or click to browse">
+          <div class="drop-zone-content" id="carrier-drop-content">
+            <div class="drop-zone-icon">
+              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="24" cy="24" r="20" fill="url(#dropGrad)" opacity="0.15"/>
+                <path d="M24 16v12M18 22l6-6 6 6" stroke="url(#dropGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M16 34h16" stroke="url(#dropGrad)" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+                <defs>
+                  <linearGradient id="dropGrad" x1="18" y1="16" x2="30" y2="34">
+                    <stop offset="0%" stop-color="#6366f1"/>
+                    <stop offset="100%" stop-color="#06b6d4"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div class="drop-zone-text">
+              <p class="drop-zone-primary">Drag &amp; drop your file here</p>
+              <p class="drop-zone-secondary">or <button class="link-btn" id="carrier-browse-btn" type="button">browse files</button></p>
+              <p class="drop-zone-formats" id="carrier-format-hint">Supports: PNG, BMP, WebP</p>
+            </div>
+          </div>
+          <input type="file" id="carrier-file-input" class="visually-hidden" accept=".png,.bmp,.webp" aria-label="Select carrier image file" />
+        </div>
+
+        <!-- Carrier Preview (hidden until file loaded) -->
+        <div id="carrier-preview" class="carrier-preview hidden" aria-live="polite"></div>
+
+        <!-- Capacity Gauge (hidden until file loaded) -->
+        <div id="capacity-section" class="capacity-section hidden" aria-live="polite"></div>
+      </div>
+
+      <!-- ── Step 2: Password ── -->
+      <div class="card" id="section-password">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="step-badge">02</span>
+            <h2 class="card-title">Set Password</h2>
+          </div>
+          <p class="card-subtitle">Your password encrypts the hidden data with AES-256-GCM</p>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="enc-password">Password <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <input type="password" id="enc-password" class="form-input" placeholder="Enter a strong password" autocomplete="new-password" aria-describedby="enc-password-strength" />
+              <button type="button" class="input-toggle-btn" id="toggle-enc-password" aria-label="Toggle password visibility">
+                <svg class="eye-icon eye-open" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+                <svg class="eye-icon eye-closed hidden" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd"/><path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.064 7 9.542 7 .847 0 1.669-.105 2.454-.303z"/></svg>
+              </button>
+            </div>
+            <!-- Password Strength Meter -->
+            <div class="strength-meter" id="enc-password-strength" aria-label="Password strength">
+              <div class="strength-bar">
+                <div class="strength-fill" id="strength-fill"></div>
+              </div>
+              <span class="strength-label" id="strength-label">Enter a password</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="enc-confirm-password">Confirm Password <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <input type="password" id="enc-confirm-password" class="form-input" placeholder="Confirm your password" autocomplete="new-password" />
+              <button type="button" class="input-toggle-btn" id="toggle-enc-confirm" aria-label="Toggle confirm password visibility">
+                <svg class="eye-icon eye-open" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+                <svg class="eye-icon eye-closed hidden" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd"/><path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.064 7 9.542 7 .847 0 1.669-.105 2.454-.303z"/></svg>
+              </button>
+            </div>
+            <p class="field-feedback" id="confirm-password-feedback" aria-live="polite"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Step 3: Secret Data ── -->
+      <div class="card" id="section-payload">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="step-badge">03</span>
+            <h2 class="card-title">Secret Data</h2>
+          </div>
+          <p class="card-subtitle">Choose what to hide inside the carrier</p>
+        </div>
+
+        <!-- Mode Toggle -->
+        <div class="mode-toggle" role="group" aria-label="Payload mode">
+          <button id="payload-mode-text" class="mode-btn mode-btn--active" data-mode="text" aria-pressed="true">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+            Text
+          </button>
+          <button id="payload-mode-files" class="mode-btn" data-mode="files" aria-pressed="false">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"/></svg>
+            Files
+          </button>
+        </div>
+
+        <!-- Text Mode -->
+        <div id="payload-text-mode" class="payload-mode-panel">
+          <div class="form-group">
+            <label class="form-label" for="secret-text">Secret Message</label>
+            <textarea id="secret-text" class="form-textarea" rows="6" placeholder="Type or paste your secret message here…" aria-describedby="text-counters" spellcheck="false"></textarea>
+            <div class="text-counters" id="text-counters" aria-live="polite">
+              <span id="char-count">0 characters</span>
+              <span class="counter-sep">·</span>
+              <span id="word-count">0 words</span>
+              <span class="counter-sep">·</span>
+              <span id="text-size">0 Bytes</span>
+            </div>
+          </div>
+          <div class="divider-or"><span>or upload a text file</span></div>
+          <div id="text-file-drop" class="drop-zone drop-zone--compact" role="button" tabindex="0" aria-label="Drop a text file here">
+            <div class="drop-zone-content">
+              <svg viewBox="0 0 20 20" fill="currentColor" style="width:24px;height:24px;opacity:0.5"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>
+              <span>Drop .txt file or <button class="link-btn" id="text-file-browse" type="button">browse</button></span>
+              <input type="file" id="text-file-input" class="visually-hidden" accept=".txt,.md,.csv,.json,.xml,.log" aria-label="Select text file" />
+            </div>
+          </div>
+        </div>
+
+        <!-- File Mode -->
+        <div id="payload-files-mode" class="payload-mode-panel hidden">
+          <div id="payload-files-drop" class="drop-zone" role="button" tabindex="0" aria-label="Drop files to hide here">
+            <div class="drop-zone-content">
+              <div class="drop-zone-icon">
+                <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="24" cy="24" r="20" fill="url(#dropGrad2)" opacity="0.15"/>
+                  <path d="M14 28h6v6h-6zM21 28h6v6h-6zM28 28h6v6h-6z" fill="url(#dropGrad2)" opacity="0.4"/>
+                  <path d="M24 14v14M18 20l6-6 6 6" stroke="url(#dropGrad2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <defs>
+                    <linearGradient id="dropGrad2" x1="14" y1="14" x2="34" y2="34">
+                      <stop offset="0%" stop-color="#6366f1"/>
+                      <stop offset="100%" stop-color="#06b6d4"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+              <div class="drop-zone-text">
+                <p class="drop-zone-primary">Drag &amp; drop any files here</p>
+                <p class="drop-zone-secondary">Images, videos, audio, PDFs, ZIPs, executables — anything · <button class="link-btn" id="payload-files-browse" type="button">browse</button></p>
+                <p class="drop-zone-formats">Multiple files are automatically bundled into a ZIP</p>
+              </div>
+            </div>
+            <input type="file" id="payload-files-input" class="visually-hidden" multiple aria-label="Select files to hide" />
+          </div>
+
+          <!-- File List -->
+          <div id="payload-file-list" class="file-list hidden" aria-label="Selected files" aria-live="polite"></div>
+
+          <!-- ZIP Info Banner -->
+          <div id="zip-info-banner" class="info-banner hidden">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+            <span id="zip-info-text"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Step 4: Encrypt Action ── -->
+      <div class="card" id="section-encrypt-action">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="step-badge">04</span>
+            <h2 class="card-title">Encrypt &amp; Embed</h2>
+          </div>
+          <p class="card-subtitle">Ready to hide your data inside the carrier</p>
+        </div>
+
+        <!-- Pre-flight Summary -->
+        <div id="encrypt-preflight" class="preflight hidden" aria-live="polite"></div>
+
+        <button id="encrypt-btn" class="btn btn--primary btn--large btn--full" disabled aria-label="Start encryption and embedding process">
+          <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+          Encrypt &amp; Hide Data
+        </button>
+
+        <!-- Validation Messages -->
+        <div id="encrypt-validation" class="validation-messages" aria-live="polite"></div>
+      </div>
+
+      <!-- ── Progress Panel (shown during processing) ── -->
+      <div id="encrypt-progress-panel" class="card progress-panel hidden" aria-live="polite" aria-label="Encryption progress">
+        <div class="progress-header">
+          <div class="progress-spinner" aria-hidden="true">
+            <svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="url(#spinGrad)" stroke-width="4" stroke-linecap="round" stroke-dasharray="80 40"/><defs><linearGradient id="spinGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs></svg>
+          </div>
+          <div class="progress-info">
+            <h3 class="progress-title" id="progress-step-title">Processing…</h3>
+            <p class="progress-eta" id="progress-eta">Calculating…</p>
+          </div>
+          <div class="progress-pct" id="progress-pct" aria-live="polite">0%</div>
+        </div>
+        <div class="progress-bar-container" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-bar-container">
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-bar-fill"></div>
+          </div>
+        </div>
+        <div class="progress-steps" id="progress-steps-list" aria-label="Processing steps"></div>
+      </div>
+
+      <!-- ── Encrypt Result Panel ── -->
+      <div id="encrypt-result-panel" class="card result-panel hidden" aria-live="polite" aria-label="Encryption result"></div>
+
+    </section>
+    <!-- /panel-encrypt -->
+
+    <!-- ─────────────────────── DECRYPT PANEL ──────────────────────────── -->
+    <section id="panel-decrypt" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-decrypt">
+
+      <!-- Upload Stego File -->
+      <div class="card" id="section-decrypt-carrier">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="step-badge">01</span>
+            <h2 class="card-title">Upload Stego File</h2>
+          </div>
+          <p class="card-subtitle">Upload the media that contains hidden encrypted data</p>
+        </div>
+
+        <div id="decrypt-drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Drop stego file here or click to browse">
+          <div class="drop-zone-content" id="decrypt-drop-content">
+            <div class="drop-zone-icon">
+              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="24" cy="24" r="20" fill="url(#decryptDropGrad)" opacity="0.15"/>
+                <path d="M24 16v12M18 28l6 6 6-6" stroke="url(#decryptDropGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M16 14h16" stroke="url(#decryptDropGrad)" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+                <defs>
+                  <linearGradient id="decryptDropGrad" x1="18" y1="14" x2="30" y2="34">
+                    <stop offset="0%" stop-color="#06b6d4"/>
+                    <stop offset="100%" stop-color="#6366f1"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div class="drop-zone-text">
+              <p class="drop-zone-primary">Drop your stego file here</p>
+              <p class="drop-zone-secondary">Images, Videos, Audio, or Documents · <button class="link-btn" id="decrypt-browse-btn" type="button">browse</button></p>
+            </div>
+          </div>
+          <input type="file" id="decrypt-file-input" class="visually-hidden" accept=".png,.bmp,.webp,.mp4,.avi,.mkv,.mov,.webm,.mp3,.wav,.ogg,.flac,.m4a,.pdf,.docx,.xlsx,.pptx,.zip,.txt,.py,.js,.java,.html,.css,.json,.csv" aria-label="Select stego file" />
+        </div>
+
+        <div id="decrypt-carrier-preview" class="carrier-preview hidden" aria-live="polite"></div>
+      </div>
+
+      <!-- Decrypt Password -->
+      <div class="card" id="section-decrypt-password">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="step-badge">02</span>
+            <h2 class="card-title">Enter Password</h2>
+          </div>
+          <p class="card-subtitle">Enter the password used when encrypting</p>
+        </div>
+
+        <div class="form-group" style="max-width:480px">
+          <label class="form-label" for="dec-password">Password <span class="required">*</span></label>
+          <div class="input-wrapper">
+            <input type="password" id="dec-password" class="form-input" placeholder="Enter decryption password" autocomplete="current-password" />
+            <button type="button" class="input-toggle-btn" id="toggle-dec-password" aria-label="Toggle password visibility">
+              <svg class="eye-icon eye-open" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+              <svg class="eye-icon eye-closed hidden" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd"/><path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.064 7 9.542 7 .847 0 1.669-.105 2.454-.303z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <button id="decrypt-btn" class="btn btn--primary btn--large btn--full" disabled aria-label="Start decryption process" style="max-width:480px">
+          <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"/></svg>
+          Decrypt &amp; Extract
+        </button>
+
+        <div id="decrypt-validation" class="validation-messages" aria-live="polite"></div>
+      </div>
+
+      <!-- Decrypt Progress -->
+      <div id="decrypt-progress-panel" class="card progress-panel hidden" aria-live="polite" aria-label="Decryption progress">
+        <div class="progress-header">
+          <div class="progress-spinner" aria-hidden="true">
+            <svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="url(#spinGrad2)" stroke-width="4" stroke-linecap="round" stroke-dasharray="80 40"/><defs><linearGradient id="spinGrad2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#06b6d4"/><stop offset="100%" stop-color="#6366f1"/></linearGradient></defs></svg>
+          </div>
+          <div class="progress-info">
+            <h3 class="progress-title" id="decrypt-step-title">Processing…</h3>
+            <p class="progress-eta" id="decrypt-eta">Calculating…</p>
+          </div>
+          <div class="progress-pct" id="decrypt-pct" aria-live="polite">0%</div>
+        </div>
+        <div class="progress-bar-container" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="decrypt-bar-container">
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="decrypt-bar-fill"></div>
+          </div>
+        </div>
+        <div class="progress-steps" id="decrypt-steps-list" aria-label="Decryption steps"></div>
+      </div>
+
+      <!-- Decrypt Result -->
+      <div id="decrypt-result-panel" class="card result-panel hidden" aria-live="polite" aria-label="Decryption result"></div>
+
+    </section>
+    <!-- /panel-decrypt -->
+
+  </main>
+  <!-- /main -->
+
+  <!-- ═══════════════════════════════════ FOOTER ══════════════════════════ -->
+  <footer class="app-footer" role="contentinfo">
+    <div class="footer-inner">
+      <p class="footer-text">
+        <span>🔒 All processing is done locally in your browser. No data is ever uploaded to a server.</span>
+      </p>
+      <p class="footer-meta">StegVault v1.0.0 · AES-256-GCM · PBKDF2 (600K iterations) · LSB Steganography</p>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════ ERROR MODAL ══════════════════════ -->
+  <div id="error-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="error-modal-title" aria-describedby="error-modal-desc">
+    <div class="modal-box">
+      <div class="modal-icon modal-icon--error" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      </div>
+      <h3 class="modal-title" id="error-modal-title">Error</h3>
+      <div class="modal-body" id="error-modal-desc"></div>
+      <button class="btn btn--primary" id="error-modal-close" aria-label="Close error dialog">Got it</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════ ABOUT MODAL ══════════════════════ -->
+  <div id="about-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
+    <div class="modal-box modal-box--large">
+      <div class="modal-header-inline">
+        <h2 class="modal-title" id="about-modal-title">About StegVault</h2>
+        <button class="modal-close-icon" id="about-modal-close-icon" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body about-content">
+        <h3>What is StegVault?</h3>
+        <p>StegVault is a Universal Steganography Toolkit that allows you to hide encrypted secrets (text or files) inside ordinary images, videos, audio, and documents.</p>
+        
+        <h3>How it Works</h3>
+        <ul>
+          <li><strong>Image Steganography:</strong> Uses Least Significant Bit (LSB) embedding. It slightly modifies the lowest bits of the pixels in PNG/WebP images to store data. Visually, the change is imperceptible.</li>
+          <li><strong>Video, Audio & Document Steganography:</strong> Uses End-Of-File (EOF) injection. Since video and audio encoders in browsers are lossy, traditional LSB would be destroyed. Instead, the encrypted payload is safely appended to the end of the file along with a special signature. This works universally across formats like MP4, MP3, PDF, and ZIP. This means <strong>unlimited capacity</strong> and zero quality degradation!</li>
+          <li><strong>Encryption:</strong> All data is compressed first, then encrypted using military-grade <strong>AES-256-GCM</strong> cryptography before being embedded. Your password is never stored anywhere.</li>
+        </ul>
+
+        <h3>Capabilities & Uses</h3>
+        <ul>
+          <li><strong>100% Local:</strong> Everything runs locally in your browser. No data is ever sent to any server.</li>
+          <li><strong>Secure Communication:</strong> Send secret messages over public channels where the carrier file appears completely innocuous.</li>
+          <li><strong>Data Archival:</strong> Store private backups inside large video, audio, or document files without arousing suspicion.</li>
+        </ul>
+
+        <h3>Limitations & Warnings</h3>
+        <ul>
+          <li>If you upload the generated stego file to a social media platform that recompresses or strips metadata (like WhatsApp or Twitter), the hidden data <strong>will be destroyed</strong>. For safe transmission, send files as "Documents" or via uncompressed channels like email, USB, or cloud storage.</li>
+          <li>Image capacity is strictly limited by the number of pixels. If you try to hide too much data in a small image, it will fail (or look noisy).</li>
+        </ul>
+
+        <h3>Future Enhancements</h3>
+        <ul>
+          <li>More advanced LSB techniques (like randomized bit dispersion).</li>
+          <li>Dark/Light mode themes.</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn--primary" id="about-modal-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════ TOAST ════════════════════════════ -->
+  <div id="toast-container" class="toast-container" aria-live="assertive" aria-atomic="true"></div>
+
+  <!-- ═══════════════════════════════════ SCRIPTS ══════════════════════════ -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

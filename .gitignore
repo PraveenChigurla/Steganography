@@ -1,0 +1,24 @@
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# OS metadata
+Thumbs.db
+desktop.ini
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Node modules (If you ever add build tools later)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Test files and local testing data
+test_carriers/
+*.steg
